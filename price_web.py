@@ -78,8 +78,10 @@ if len(st.session_state.order) == 0:
 else:
     df_order = pd.DataFrame(st.session_state.order)
     total = df_order["小计 ($)"].sum()
-    discounted = total * (1 - discount / 100)
-    taxed = discounted * (1 + tax / 100)
+    discount_amount = total * (discount / 100)
+    discounted = total - discount_amount
+    tax_amount = discounted * (tax / 100)
+    taxed = discounted + tax_amount
 
     # 显示订单数据表（带删除按钮）
     for i in range(len(df_order)):
@@ -93,6 +95,7 @@ else:
 
     # 添加折扣/税率显示 + 总计
     st.markdown("---")
-    st.markdown(f"**折扣：** {discount}%")
-    st.markdown(f"**税率：** {tax}%")
+    st.markdown(f"**原始总价：** $ {total:.2f}")
+    st.markdown(f"**折扣：** {discount}% ➡️ 减少 $ {discount_amount:.2f}")
+    st.markdown(f"**税率：** {tax}% ➡️ 增加 $ {tax_amount:.2f}")
     st.markdown(f"### 🧮 总计（含税）：🟩 **$ {taxed:.2f}**")
