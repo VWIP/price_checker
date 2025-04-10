@@ -91,7 +91,7 @@ else:
         with col2:
             if st.button("🗑️", key=f"del_{i}"):
                 st.session_state.order.pop(i)
-                st.experimental_rerun()
+st.rerun()
 
     # 添加折扣/税率显示 + 总计
     st.markdown("---")
