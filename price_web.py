@@ -1,22 +1,13 @@
-# ✅ Streamlit App Template — Guaranteed to Work
-# Instructions:
-# 1. Deploy this to Streamlit Cloud
-# 2. Add your GOOGLE_CREDENTIALS to Secrets
-# 3. Share your Google Sheet with the service account
-# 4. Replace SHEET_ID and SHEET_NAME accordingly
-
+# 🍱 Streamlit 点餐风格前端 - 商品选择器
 import streamlit as st
 import pandas as pd
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
 
-# Setup Google Sheets connection from secrets
+# 获取 Google Sheet 数据
 def get_gsheet_data(sheet_id, sheet_name):
-    scope = [
-        'https://spreadsheets.google.com/feeds',
-        'https://www.googleapis.com/auth/drive'
-    ]
+    scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
     try:
         creds_dict = json.loads(st.secrets["GOOGLE_CREDENTIALS"])
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
@@ -34,47 +25,70 @@ def get_gsheet_data(sheet_id, sheet_name):
         st.exception(e)
         st.stop()
 
-# --- Sheet Configuration ---
-SHEET_ID = "1ikOLabQ1f4OlxLDnm-jIgL4Nckkxfdf71jwmmWu5E5M"   # ✅ Replace with your sheet ID
-SHEET_NAME = "Sheet1"                                       # ✅ Replace with your actual sheet name
-
-# --- Load Data ---
+# 配置
+SHEET_ID = "1ikOLabQ1f4OlxLDnm-jIgL4Nckkxfdf71jwmmWu5E5M"
+SHEET_NAME = "Sheet1"
 data = get_gsheet_data(SHEET_ID, SHEET_NAME)
 
-# --- UI ---
-st.title("💰 自用价格计算器")
-st.write("从 Google Sheet 动态读取价格")
+# 初始化 session_state
+if "order" not in st.session_state:
+    st.session_state.order = []
 
-with st.form("form"):
-    color = st.selectbox("选择颜色", data['颜色'].unique())
-    kind = st.selectbox("选择种类", data['种类'].unique())
-    length = st.selectbox("选择长度 (cm)", data['长度(cm)'].unique())
-    quantity = st.number_input("数量", min_value=1, value=1)
+st.title("🧾 点单系统")
+st.write("请选择商品：点击种类进入选项，添加后将在下方汇总。")
 
-    discount = st.slider("折扣 (%)", 0, 100, 0)
-    tax = st.slider("税率 (%)", 0, 25, 5)
+# 显示所有种类卡片式选择
+all_kinds = data['种类'].unique()
+st.write("## 菜单")
+cols = st.columns(3)
+for idx, kind in enumerate(all_kinds):
+    with cols[idx % 3]:
+        with st.expander(f"🍽️ {kind}"):
+            available_colors = data[data['种类'] == kind]['颜色'].unique()
+            color = st.selectbox(f"选择颜色（{kind}）", available_colors, key=f"color_{kind}")
 
-    submitted = st.form_submit_button("计算")
+            available_lengths = data[(data['种类'] == kind) & (data['颜色'] == color)]['长度(cm)'].unique()
+            length = st.selectbox(f"选择长度（{kind}）", available_lengths, key=f"length_{kind}")
 
-if submitted:
-    filtered = data[(data['颜色'] == color) &
-                    (data['种类'] == kind) &
-                    (data['长度(cm)'] == length)]
+            quantity = st.number_input(f"数量（{kind}）", min_value=1, value=1, step=1, key=f"qty_{kind}")
 
-    if not filtered.empty:
-        unit_price = filtered.iloc[0]['单价']
-        subtotal = unit_price * quantity
-        after_discount = subtotal * (1 - discount / 100)
-        total = after_discount * (1 + tax / 100)
+            if st.button(f"添加 {kind}", key=f"add_{kind}"):
+                match = data[(data['种类'] == kind) & (data['颜色'] == color) & (data['长度(cm)'] == length)]
+                if not match.empty:
+                    price = match.iloc[0]['单价']
+                    st.session_state.order.append({
+                        "种类": kind,
+                        "颜色": color,
+                        "长度(cm)": length,
+                        "数量": quantity,
+                        "单价": price,
+                        "小计": price * quantity
+                    })
+                else:
+                    st.warning("找不到该组合对应的单价")
 
-        st.success(f"✅ 单价：{unit_price} 元")
-        st.info(f"""
-        - 小计：{subtotal:.2f} 元  
-        - 折扣后：{after_discount:.2f} 元  
-        - 含税总价：{total:.2f} 元
-        """)
-    else:
-        st.error("未找到匹配数据，请检查 Google Sheet 中是否包含该组合")
+# 显示订单
+st.write("## 🧾 当前订单")
+if len(st.session_state.order) == 0:
+    st.info("当前没有添加任何商品")
+else:
+    df_order = pd.DataFrame(st.session_state.order)
+    total = df_order["小计"].sum()
+    st.dataframe(df_order)
+    st.success(f"当前总价：￥{total:.2f}")
 
-with st.expander("🔍 查看完整价格表"):
-    st.dataframe(data)
+    # 删除项
+    for i, item in enumerate(st.session_state.order):
+        if st.button(f"删除第 {i+1} 项", key=f"del_{i}"):
+            st.session_state.order.pop(i)
+            st.experimental_rerun()
+
+# 折扣和税率
+st.write("## 💸 调整折扣和税率")
+discount = st.slider("折扣 (%)", 0, 100, 0)
+tax = st.slider("税率 (%)", 0, 25, 5)
+
+if len(st.session_state.order) > 0:
+    discounted = total * (1 - discount / 100)
+    taxed = discounted * (1 + tax / 100)
+    st.info(f"折扣后：￥{discounted:.2f}，含税后总价：￥{taxed:.2f}")
