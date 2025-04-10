@@ -69,7 +69,7 @@ for idx, kind in enumerate(all_kinds):
 
 # 折扣和税率
 discount = st.slider("折扣 (%)", 0, 100, 0)
-tax = st.slider("税率 (%)", 0, 25, 5)
+tax = st.number_input("税率 (%)", min_value=0.0, step=0.1, value=2.7)
 
 # 显示订单
 st.write("## 🧾 当前订单")
