@@ -50,9 +50,7 @@ for idx, kind in enumerate(all_kinds):
             available_lengths = data[(data['种类'] == kind) & (data['颜色'] == color)]['长度(inch)'].unique()
             length = st.selectbox(f"选择长度（inch）（{kind}）", available_lengths, key=f"length_{kind}")
 
-            quantity = st.number_input(f"数量（{kind}）", min_value=1, value=1, step=1, key=f"qty_{kind}")
-
-            if st.button(f"添加 {kind}", key=f"add_{kind}"):
+            if st.button(f"添加 {kind}", key=f"add_{kind}_{color}_{length}"):
                 match = data[(data['种类'] == kind) & (data['颜色'] == color) & (data['长度(inch)'] == length)]
                 if not match.empty:
                     price = match.iloc[0]['单价']
@@ -60,9 +58,9 @@ for idx, kind in enumerate(all_kinds):
                         "种类": kind,
                         "颜色": color,
                         "长度 (inch)": length,
-                        "数量": quantity,
+                        "数量": 1,
                         "单价 ($)": price,
-                        "小计 ($)": price * quantity
+                        "小计 ($)": price
                     })
                 else:
                     st.warning("找不到该组合对应的单价")
@@ -71,11 +69,40 @@ for idx, kind in enumerate(all_kinds):
 discount = st.slider("折扣 (%)", 0, 100, 0)
 tax = st.number_input("税率 (%)", min_value=0.0, step=0.1, value=2.7)
 
-# 显示订单
+# 当前订单
 st.write("## 🧾 当前订单")
+if st.button("🧹 清空订单"):
+    st.session_state.order = []
+    st.rerun()
+
 if len(st.session_state.order) == 0:
     st.info("当前没有添加任何商品")
 else:
+    total = 0
+    for i, item in enumerate(st.session_state.order):
+        row = item
+        qty_key = f"qty_input_{i}"
+        updated_qty = st.number_input(
+            f"{row['颜色']} / {row['种类']} / {row['长度 (inch)']} inch 数量",
+            min_value=1,
+            value=row["数量"],
+            step=1,
+            key=qty_key
+        )
+
+        st.session_state.order[i]["数量"] = updated_qty
+        st.session_state.order[i]["小计 ($)"] = updated_qty * row["单价 ($)"]
+
+        col1, col2 = st.columns([5, 5])
+        with col1:
+            st.markdown(f"**{row['颜色']} / {row['种类']} / {row['长度 (inch)']} inch**")
+        with col2:
+            st.markdown(f"**单价：${row['单价 ($)']:.2f} | 小计：${st.session_state.order[i]['小计 ($)']:.2f}**")
+
+        if st.button("🗑️", key=f"del_{i}"):
+            st.session_state.order.pop(i)
+            st.rerun()
+
     df_order = pd.DataFrame(st.session_state.order)
     total = df_order["小计 ($)"].sum()
     discount_amount = total * (discount / 100)
@@ -83,17 +110,6 @@ else:
     tax_amount = discounted * (tax / 100)
     taxed = discounted + tax_amount
 
-    # 显示订单数据表（带删除按钮）
-    for i in range(len(df_order)):
-        col1, col2 = st.columns([9, 1])
-        with col1:
-            st.write(df_order.iloc[i:i+1].style.format({"单价 ($)": "$ {:.2f}", "小计 ($)": "$ {:.2f}"}))
-        with col2:
-            if st.button("🗑️", key=f"del_{i}"):
-                st.session_state.order.pop(i)
-                st.rerun()
-
-    # 添加折扣/税率显示 + 总计
     st.markdown("---")
     st.markdown(f"**原始总价：** $ {total:.2f}")
     st.markdown(f"**折扣：** {discount}% ➡️ 减少 $ {discount_amount:.2f}")
