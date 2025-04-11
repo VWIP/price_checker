@@ -73,6 +73,11 @@ tax = st.number_input("税率 (%)", min_value=0.0, step=0.1, value=2.7)
 
 # 显示订单
 st.write("## 🧾 当前订单")
+if st.button("🧹 清空订单"):
+    st.session_state.order = []
+    st.rerun()
+
+st.write("## 🧾 当前订单")
 if len(st.session_state.order) == 0:
     st.info("当前没有添加任何商品")
 else:
@@ -87,7 +92,12 @@ else:
     for i in range(len(df_order)):
         col1, col2 = st.columns([9, 1])
         with col1:
-            st.write(df_order.iloc[i:i+1].style.format({"单价 ($)": "$ {:.2f}", "小计 ($)": "$ {:.2f}"}))
+            row = df_order.iloc[i]
+            col_a, col_b = st.columns([5, 5])
+            with col_a:
+                st.markdown(f"**{row['颜色']} / {row['种类']} / {row['长度 (inch)']} inch / {row['数量']} 件**")
+            with col_b:
+                st.markdown(f"**单价：${row['单价 ($)']:.2f}**  |  **小计：${row['小计 ($)']:.2f}**")
         with col2:
             if st.button("🗑️", key=f"del_{i}"):
                 st.session_state.order.pop(i)
