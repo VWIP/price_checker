@@ -66,16 +66,26 @@ for idx, kind in enumerate(all_kinds):
                 else:
                     st.warning("⚠️ 表格中找不到该组合")
 
-# === 折扣和税率 ===
+# === 折扣与税率设置：一行显示 + 可选金额 + 自定义金额 ===
 st.write("## 💵 折扣与税率")
-discount_mode = st.selectbox("折扣方式", ["固定金额 ($)", "百分比 (%)"], index=0)
+col_a, col_b, col_c = st.columns([2, 2, 2])
 
-if discount_mode == "固定金额 ($)":
-    discount_value = st.number_input("折扣金额", min_value=0.0, value=0.0, step=1.0)
-else:
-    discount_value = st.slider("折扣百分比 (%)", 0, 100, 0)
+with col_a:
+    discount_mode = st.selectbox("折扣方式", ["固定金额 ($)", "百分比 (%)"], index=0)
 
-tax = st.number_input("税率 (%)", value=2.7, step=0.1)
+with col_b:
+    if discount_mode == "固定金额 ($)":
+        discount_option = st.selectbox("折扣金额", ["$10", "$15", "$20", "自定义金额"], index=3)
+        if discount_option == "自定义金额":
+            discount_value = st.number_input("输入金额", min_value=0.0, value=0.0, step=1.0)
+        else:
+            discount_value = float(discount_option.strip("$"))
+    else:
+        discount_value = st.slider("折扣百分比 (%)", 0, 100, 0)
+
+with col_c:
+    tax = st.number_input("税率 (%)", value=2.7, step=0.1)
+
 
 # === 当前订单 ===
 st.write("## 🧾 当前订单明细")
