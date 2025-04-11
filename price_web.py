@@ -68,33 +68,33 @@ for idx, kind in enumerate(all_kinds):
 
 # === 折扣与税率设置：一行显示 + 可选金额 + 自定义金额 ===
 st.write("## 💵 折扣与税率")
-col1, col2, col3, col4 = st.columns([1.8, 3, 2, 2])
+col1, col2, col3, col4 = st.columns([1.5, 4.5, 2, 2])
 
-# 折扣方式选择
+# 折扣方式（左侧）
 with col1:
     discount_mode = st.selectbox("折扣方式", ["固定金额 ($)", "百分比 (%)"], index=0)
 
-# 折扣金额选择按钮
+# 折扣金额按钮（中间宽区域）
 with col2:
+    st.markdown("**折扣金额**")
     if "selected_discount" not in st.session_state:
         st.session_state.selected_discount = "自定义"
 
-    st.markdown("**折扣金额**")
-    b1, b2, b3, b4 = st.columns(4)
-    with b1:
-        if st.button("$10", key="disc_10"):
+    disc_cols = st.columns([1, 1, 1, 1.5])
+    with disc_cols[0]:
+        if st.button("$10"):
             st.session_state.selected_discount = "$10"
-    with b2:
-        if st.button("$15", key="disc_15"):
+    with disc_cols[1]:
+        if st.button("$15"):
             st.session_state.selected_discount = "$15"
-    with b3:
-        if st.button("$20", key="disc_20"):
+    with disc_cols[2]:
+        if st.button("$20"):
             st.session_state.selected_discount = "$20"
-    with b4:
-        if st.button("自定义", key="disc_custom"):
+    with disc_cols[3]:
+        if st.button("自定义"):
             st.session_state.selected_discount = "自定义"
 
-# 折扣值输入（根据选择）
+# 折扣值输入（在第三列，根据选项显示）
 with col3:
     if discount_mode == "固定金额 ($)":
         if st.session_state.selected_discount == "自定义":
@@ -107,6 +107,7 @@ with col3:
 # 税率输入
 with col4:
     tax = st.number_input("税率 (%)", value=2.7, step=0.1)
+
 
 
 
