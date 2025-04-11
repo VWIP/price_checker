@@ -123,20 +123,44 @@ with col1:
     discount_mode = st.selectbox(" ", ["固定金额 ($)", "百分比 (%)"], index=0, label_visibility="collapsed")
 
 with col2:
-    st.markdown("<div style='padding-top:8px; font-weight:bold'>折扣金额</div>", unsafe_allow_html=True)
-    button_cols = st.columns(4)
-    with button_cols[0]:
-        if st.button("$10"):
-            st.session_state.selected_discount = "$10"
-    with button_cols[1]:
-        if st.button("$15"):
-            st.session_state.selected_discount = "$15"
-    with button_cols[2]:
-        if st.button("$20"):
-            st.session_state.selected_discount = "$20"
-    with button_cols[3]:
-        if st.button("自定义"):
-            st.session_state.selected_discount = "自定义"
+    st.markdown("<div style='padding-top:6px; font-weight:bold'>折扣金额</div>", unsafe_allow_html=True)
+
+    custom_css = """
+    <style>
+    .disc-btn-container {
+        display: flex;
+        gap: 10px;
+        margin-top: 2px;
+    }
+    .disc-btn-container form {
+        margin: 0 !important;
+    }
+    .disc-btn-container button {
+        height: 36px !important;
+        font-size: 15px !important;
+        padding: 0 14px;
+        border-radius: 6px;
+    }
+    </style>
+    """
+    st.markdown(custom_css, unsafe_allow_html=True)
+
+    btn_container = st.container()
+    with btn_container:
+        btn_row = st.columns(4)
+        with btn_row[0]:
+            if st.button("$10", key="disc_10"):
+                st.session_state.selected_discount = "$10"
+        with btn_row[1]:
+            if st.button("$15", key="disc_15"):
+                st.session_state.selected_discount = "$15"
+        with btn_row[2]:
+            if st.button("$20", key="disc_20"):
+                st.session_state.selected_discount = "$20"
+        with btn_row[3]:
+            if st.button("自定义", key="disc_custom"):
+                st.session_state.selected_discount = "自定义"
+
 
 with col3:
     st.markdown("<div style='padding-top:8px'>输入金额</div>", unsafe_allow_html=True)
