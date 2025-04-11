@@ -34,12 +34,10 @@ data = get_gsheet_data(SHEET_ID, SHEET_NAME)
 if "order" not in st.session_state:
     st.session_state.order = []
 if "selected_discount" not in st.session_state:
-    st.session_state.selected_discount = None  # 初始化为空
-
+    st.session_state.selected_discount = None  # 初始无折扣
 
 # === 页面标题 ===
 st.title("🧾 点单系统")
-st.write("点击种类 → 选择颜色 + 长度 → 添加至订单")
 
 # === 菜单选择 ===
 st.write("## 📋 菜单")
@@ -95,25 +93,26 @@ else:
 
 # === 折扣与税率 ===
 st.markdown("## 💵 折扣与税率")
-col1, col2, col3 = st.columns([1.5, 4.5, 2])
+col1, col2, col3 = st.columns([2, 5, 2.5])
 
 with col1:
-    st.markdown("<div style='padding-top:8px'>折扣方式</div>", unsafe_allow_html=True)
+    st.markdown("**折扣方式**")
     discount_mode = st.selectbox(" ", ["固定金额 ($)", "百分比 (%)"], index=0, label_visibility="collapsed")
 
 with col2:
-    st.markdown("<div style='padding-top:8px; font-weight:bold'>折扣金额</div>", unsafe_allow_html=True)
-    st.markdown("<style>.stButton button { height: 36px !important; font-size: 15px !important; padding: 0 16px; border-radius: 6px; line-height: 1; white-space: nowrap; }</style>", unsafe_allow_html=True)
-    bc1, bc2, bc3 = st.columns(3)
-    with bc1:
+    st.markdown("**折扣金额**")
+    btns = st.columns(4)
+    with btns[0]:
         if st.button("$10"): st.session_state.selected_discount = "$10"
-    with bc2:
+    with btns[1]:
         if st.button("$15"): st.session_state.selected_discount = "$15"
-    with bc3:
+    with btns[2]:
         if st.button("$20"): st.session_state.selected_discount = "$20"
+    with btns[3]:
+        if st.button("❌ 无折扣"): st.session_state.selected_discount = None
 
 with col3:
-    st.markdown("<div style='padding-top:8px'>税率 (%)</div>", unsafe_allow_html=True)
+    st.markdown("**税率 (%)**")
     tax = st.number_input(" ", value=2.7, step=0.1, label_visibility="collapsed")
 
 # === 价格计算 ===
@@ -123,17 +122,10 @@ else:
     df_order = pd.DataFrame(st.session_state.order)
 
 subtotal = df_order["小计 ($)"].sum()
-
-# 设置默认折扣为 0（如果未选择）
-if st.session_state.selected_discount:
-    discount_amt = float(st.session_state.selected_discount.strip("$"))
-else:
-    discount_amt = 0.0
-
+discount_amt = float(st.session_state.selected_discount.strip("$")) if st.session_state.selected_discount else 0.0
 after_discount = max(subtotal - discount_amt, 0)
 tax_amt = after_discount * (tax / 100)
 total = after_discount + tax_amt
-
 
 # === 汇总展示 ===
 st.markdown("---")
