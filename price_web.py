@@ -36,6 +36,18 @@ if "order" not in st.session_state:
 if "selected_discount" not in st.session_state:
     st.session_state.selected_discount = None  # 初始无折扣
 
+# === 自定义按钮样式，优化间距并保持一行展示 ===
+st.markdown("""
+<style>
+button[kind="secondary"] {
+    padding: 0.25rem 0.75rem !important;
+    font-size: 15px !important;
+    margin-right: 8px !important;
+    white-space: nowrap;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # === 页面标题 ===
 st.title("🧾 点单系统")
 
@@ -93,7 +105,7 @@ else:
 
 # === 折扣与税率 ===
 st.markdown("## 💵 折扣与税率")
-col1, col2, col3 = st.columns([2, 5, 2.5])
+col1, col2, col3 = st.columns([2, 5.5, 2.5])
 
 with col1:
     st.markdown("**折扣方式**")
@@ -101,7 +113,7 @@ with col1:
 
 with col2:
     st.markdown("**折扣金额**")
-    btns = st.columns(4)
+    btns = st.columns([1, 1, 1, 1])
     with btns[0]:
         if st.button("$10"): st.session_state.selected_discount = "$10"
     with btns[1]:
