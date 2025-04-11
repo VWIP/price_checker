@@ -67,20 +67,21 @@ for idx, kind in enumerate(all_kinds):
                     st.warning("⚠️ 表格中找不到该组合")
 
 # === 折扣与税率设置：一行显示 + 可选金额 + 自定义金额 ===
-st.write("## 💵 折扣与税率")
+st.markdown("## 💵 折扣与税率")
 col1, col2, col3, col4 = st.columns([1.5, 4.5, 2, 2])
 
-# 折扣方式（左侧）
+# 折扣方式选择（使用 padding 顶部对齐）
 with col1:
-    discount_mode = st.selectbox("折扣方式", ["固定金额 ($)", "百分比 (%)"], index=0)
+    st.markdown("<div style='padding-top:15px'>折扣方式</div>", unsafe_allow_html=True)
+    discount_mode = st.selectbox(" ", ["固定金额 ($)", "百分比 (%)"], index=0, label_visibility="collapsed")
 
-# 折扣金额按钮（中间宽区域）
+# 折扣金额按钮
 with col2:
-    st.markdown("**折扣金额**")
+    st.markdown("<div style='padding-top:15px'>折扣金额</div>", unsafe_allow_html=True)
     if "selected_discount" not in st.session_state:
         st.session_state.selected_discount = "自定义"
 
-    disc_cols = st.columns([1, 1, 1, 1.5])
+    disc_cols = st.columns(4)
     with disc_cols[0]:
         if st.button("$10"):
             st.session_state.selected_discount = "$10"
@@ -94,20 +95,21 @@ with col2:
         if st.button("自定义"):
             st.session_state.selected_discount = "自定义"
 
-# 折扣值输入（在第三列，根据选项显示）
+# 自定义金额输入框
 with col3:
+    st.markdown("<div style='padding-top:15px'>输入金额</div>", unsafe_allow_html=True)
     if discount_mode == "固定金额 ($)":
         if st.session_state.selected_discount == "自定义":
-            discount_value = st.number_input("输入金额", min_value=0.0, value=0.0, step=1.0)
+            discount_value = st.number_input(" ", min_value=0.0, value=0.0, step=1.0, label_visibility="collapsed")
         else:
             discount_value = float(st.session_state.selected_discount.strip("$"))
     else:
-        discount_value = st.slider("折扣百分比 (%)", 0, 100, 0, label="折扣百分比 (%)")
+        discount_value = st.slider("折扣百分比 (%)", 0, 100, 0)
 
-# 税率输入
+# 税率设置
 with col4:
-    tax = st.number_input("税率 (%)", value=2.7, step=0.1)
-
+    st.markdown("<div style='padding-top:15px'>税率 (%)</div>", unsafe_allow_html=True)
+    tax = st.number_input(" ", value=2.7, step=0.1, label_visibility="collapsed")
 
 
 
