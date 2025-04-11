@@ -110,47 +110,24 @@ with col1:
 
 with col2:
     st.markdown("<div style='padding-top:8px; font-weight:bold'>折扣金额</div>", unsafe_allow_html=True)
-
     st.markdown("""
     <style>
-    .btn-row {
-        display: flex;
-        gap: 10px;
-    }
-    .btn-row button {
-        height: 36px !important;
-        font-size: 15px !important;
-        padding: 0 16px;
-        border-radius: 6px;
-        line-height: 1 !important;
-        white-space: nowrap;
-    }
+    .stButton button { height: 36px !important; line-height: 1 !important; font-size: 15px !important; }
     </style>
     """, unsafe_allow_html=True)
-
-    # 创建按钮行容器
-    btn_row = st.columns(4)
-    with btn_row[0]:
-        if st.button("$10", key="disc_10"):
-            st.session_state.selected_discount = "$10"
-    with btn_row[1]:
-        if st.button("$15", key="disc_15"):
-            st.session_state.selected_discount = "$15"
-    with btn_row[2]:
-        if st.button("$20", key="disc_20"):
-            st.session_state.selected_discount = "$20"
-    with btn_row[3]:
-        if st.button("自定义", key="disc_custom"):
-            st.session_state.selected_discount = "自定义"
+    bc1, bc2, bc3, bc4 = st.columns(4)
+    with bc1:
+        if st.button("$10"): st.session_state.selected_discount = "$10"
+    with bc2:
+        if st.button("$15"): st.session_state.selected_discount = "$15"
+    with bc3:
+        if st.button("$20"): st.session_state.selected_discount = "$20"
 
 
 with col3:
     st.markdown("<div style='padding-top:8px'>输入金额</div>", unsafe_allow_html=True)
     if discount_mode == "固定金额 ($)":
-        if st.session_state.selected_discount == "自定义":
-            discount_value = st.number_input(" ", min_value=0.0, value=0.0, step=1.0, label_visibility="collapsed")
-        else:
-            discount_value = float(st.session_state.selected_discount.strip("$"))
+        discount_value = float(st.session_state.selected_discount.strip("$"))
     else:
         discount_value = st.slider("折扣百分比 (%)", 0, 100, 0)
 
