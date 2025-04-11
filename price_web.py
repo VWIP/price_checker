@@ -79,42 +79,43 @@ if st.button("🧹 清空订单"):
 if not st.session_state.order:
     st.info("🕙 当前没有添加任何商品")
 else:
-    # 表头
-    header_cols = st.columns([1.2, 2, 2, 2.2, 3, 1])
-    headers = ["颜色", "种类", "长度", "数量", "单价 + 小计", "删除"]
-    for col, h in zip(header_cols, headers):
-        col.markdown(f"**{h}**")
+    # 表头：7列版本
+header_cols = st.columns([1.2, 2, 2, 2.2, 1.5, 1.5, 1])
+headers = ["颜色", "种类", "长度", "数量", "单价", "小计", "删除"]
+for col, h in zip(header_cols, headers):
+    col.markdown(f"<span style='font-size:16px; font-weight:600'>{h}</span>", unsafe_allow_html=True)
 
-    # 每一项订单
-    for i, row in enumerate(st.session_state.order):
-        qty_key = f"qty_input_{i}"
-        col1, col2, col3, col4, col5, col6 = st.columns([1.2, 2, 2, 2.2, 3, 1])
+# 每一项订单
+for i, row in enumerate(st.session_state.order):
+    qty_key = f"qty_input_{i}"
+    col1, col2, col3, col4, col5, col6, col7 = st.columns([1.2, 2, 2, 2.2, 1.5, 1.5, 1])
 
-        with col1:
-            st.markdown(row['颜色'])
-        with col2:
-            st.markdown(row['种类'])
-        with col3:
-            st.markdown(f"{row['长度 (inch)']} inch")
-        with col4:
-            qty = st.number_input(
-                label=" ",             # ✅ 不显示 label 字
-                min_value=1,
-                step=1,
-                value=row['数量'],
-                key=qty_key,
-                label_visibility="collapsed"  # ✅ 彻底隐藏
-)
+    with col1:
+        st.markdown(f"<span style='font-size:16px'>{row['颜色']}</span>", unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"<span style='font-size:16px'>{row['种类']}</span>", unsafe_allow_html=True)
+    with col3:
+        st.markdown(f"<span style='font-size:16px'>{row['长度 (inch)']} inch</span>", unsafe_allow_html=True)
+    with col4:
+        qty = st.number_input(
+            label=" ",
+            min_value=1,
+            step=1,
+            value=row["数量"],
+            key=qty_key,
+            label_visibility="collapsed"
+        )
+        st.session_state.order[i]["数量"] = qty
+        st.session_state.order[i]["小计 ($)"] = qty * row["单价 ($)"]
+    with col5:
+        st.markdown(f"<span style='font-size:16px'>${row['单价 ($)']:.2f}</span>", unsafe_allow_html=True)
+    with col6:
+        st.markdown(f"<span style='font-size:16px'>${row['小计 ($)']:.2f}</span>", unsafe_allow_html=True)
+    with col7:
+        if st.button("🗑️", key=f"del_{i}"):
+            st.session_state.order.pop(i)
+            st.rerun()
 
-            row['数量'] = qty
-            row['小计 ($)'] = qty * row['单价 ($)']
-            st.session_state.order[i] = row
-        with col5:
-            st.markdown(f"${row['单价 ($)']:.2f} ｜ ${row['小计 ($)']:.2f}")
-        with col6:
-            if st.button("🗑️", key=f"del_{i}"):
-                st.session_state.order.pop(i)
-                st.rerun()
 
     # 总价计算
     df_order = pd.DataFrame(st.session_state.order)
