@@ -53,7 +53,7 @@ for idx, kind in enumerate(all_kinds):
             quantity = st.number_input(f"数量（{kind}）", min_value=1, value=1, step=1, key=f"qty_{kind}")
 
             if st.button(f"添加 {kind}", key=f"add_{kind}"):
-                match = data[(data['种类'] == kind) & (data['颜色'] == color) & (data['长度(cm)'] == length)]
+                match = data[(data['种类'] == kind) & (data['颜色'] == color) & (data['长度(inch)'] == length)]
                 if not match.empty:
                     price = match.iloc[0]['单价']
                     st.session_state.order.append({
