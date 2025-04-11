@@ -80,42 +80,42 @@ if len(st.session_state.order) == 0:
 else:
     st.markdown("### 当前订单明细")
 
-    # 模拟表头
-    header_cols = st.columns([1, 2, 2, 2, 3, 1])
-    header_labels = ["颜色", "种类", "长度", "数量", "单价 + 小计", "删除"]
-    for col, label in zip(header_cols, header_labels):
-        col.markdown(f"**{label}**")
+# 表头
+header_cols = st.columns([1.2, 2, 2, 2, 2.8, 1])
+header_labels = ["颜色", "种类", "长度", "数量", "单价 + 小计", "删除"]
+for col, label in zip(header_cols, header_labels):
+    col.markdown(f"**{label}**")
 
-    # 模拟每一行数据
-    for i, item in enumerate(st.session_state.order):
-        row = item
-        qty_key = f"qty_input_{i}"
-        col1, col2, col3, col4, col5, col6 = st.columns([1, 2, 2, 2, 3, 1])
+# 每一行订单项
+for i, item in enumerate(st.session_state.order):
+    row = item
+    qty_key = f"qty_input_{i}"
+    col1, col2, col3, col4, col5, col6 = st.columns([1.2, 2, 2, 2, 2.8, 1])
 
-        with col1:
-            st.markdown(f"{row['颜色']}")
-        with col2:
-            st.markdown(f"{row['种类']}")
-        with col3:
-            st.markdown(f"{row['长度 (inch)']} inch")
-        with col4:
-            updated_qty = st.number_input(
-                label="数量",
-                min_value=1,
-                value=row["数量"],
-                step=1,
-                key=qty_key,
-                # 改为默认显示 label，可让按钮正常显示
-                label_visibility="visible"
-            )
-            st.session_state.order[i]["数量"] = updated_qty
-            st.session_state.order[i]["小计 ($)"] = updated_qty * row["单价 ($)"]
-        with col5:
-            st.markdown(f"${row['单价 ($)']:.2f} ｜ ${st.session_state.order[i]['小计 ($)']:.2f}")
-        with col6:
-            if st.button("🗑️", key=f"del_{i}"):
-                st.session_state.order.pop(i)
-                st.rerun()
+    with col1:
+        st.markdown(f"{row['颜色']}")
+    with col2:
+        st.markdown(f"{row['种类']}")
+    with col3:
+        st.markdown(f"{row['长度 (inch)']} inch")
+    with col4:
+        updated_qty = st.number_input(
+            label=" ",
+            min_value=1,
+            value=row["数量"],
+            step=1,
+            key=qty_key,
+            label_visibility="visible"  # ✅ 修复 +/- 不显示的问题
+        )
+        st.session_state.order[i]["数量"] = updated_qty
+        st.session_state.order[i]["小计 ($)"] = updated_qty * row["单价 ($)"]
+    with col5:
+        st.markdown(f"${row['单价 ($)']:.2f} ｜ ${st.session_state.order[i]['小计 ($)']:.2f}")
+    with col6:
+        if st.button("🗑️", key=f"del_{i}"):
+            st.session_state.order.pop(i)
+            st.rerun()
+
 
     # 汇总统计
     df_order = pd.DataFrame(st.session_state.order)
