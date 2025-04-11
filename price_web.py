@@ -66,8 +66,15 @@ for idx, kind in enumerate(all_kinds):
                 else:
                     st.warning("⚠️ 表格中找不到该组合")
 
-# === 折扣 & 税率设置 ===
-discount = st.slider("折扣 (%)", 0, 100, 0)
+# === 折扣和税率 ===
+st.write("## 💵 折扣与税率")
+discount_mode = st.selectbox("折扣方式", ["固定金额 ($)", "百分比 (%)"], index=0)
+
+if discount_mode == "固定金额 ($)":
+    discount_value = st.number_input("折扣金额", min_value=0.0, value=0.0, step=1.0)
+else:
+    discount_value = st.slider("折扣百分比 (%)", 0, 100, 0)
+
 tax = st.number_input("税率 (%)", value=2.7, step=0.1)
 
 # === 当前订单 ===
@@ -116,17 +123,25 @@ else:
                 st.session_state.order.pop(i)
                 st.rerun()
 
-    # 总价计算
+    # === 总价计算 ===
     df_order = pd.DataFrame(st.session_state.order)
     subtotal = df_order["小计 ($)"].sum()
-    discount_amt = subtotal * (discount / 100)
-    after_discount = subtotal - discount_amt
+
+    if discount_mode == "固定金额 ($)":
+        discount_amt = discount_value
+        after_discount = max(subtotal - discount_amt, 0)
+        discount_display = f"**折扣：** -${discount_amt:.2f}"
+    else:
+        discount_amt = subtotal * (discount_value / 100)
+        after_discount = subtotal - discount_amt
+        discount_display = f"**折扣：** {discount_value}% → -${discount_amt:.2f}"
+
     tax_amt = after_discount * (tax / 100)
     total = after_discount + tax_amt
 
-    # 显示金额汇总
+    # === 显示金额汇总 ===
     st.markdown("---")
     st.markdown(f"**原始总价：** ${subtotal:.2f}")
-    st.markdown(f"**折扣：** {discount}% → -${discount_amt:.2f}")
+    st.markdown(discount_display)
     st.markdown(f"**税率：** {tax:.1f}% → +${tax_amt:.2f}")
     st.markdown(f"### 🧮 含税总计：🟩 **${total:.2f}**")
