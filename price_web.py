@@ -50,7 +50,8 @@ for idx, kind in enumerate(all_kinds):
             available_lengths = data[(data['种类'] == kind) & (data['颜色'] == color)]['长度(inch)'].unique()
             length = st.selectbox(f"选择长度（inch）（{kind}）", available_lengths, key=f"length_{kind}")
 
-            quantity = st.number_input(f"数量（{kind}）", min_value=1, value=1, step=1, key=f"qty_{kind}")
+            # 数量输入统一管理
+quantity = st.number_input("数量", min_value=1, value=1, step=1, key=f"qty_{kind}_{color}_{length}")
 
             if st.button(f"添加 {kind}", key=f"add_{kind}"):
                 match = data[(data['种类'] == kind) & (data['颜色'] == color) & (data['长度(inch)'] == length)]
@@ -72,7 +73,6 @@ discount = st.slider("折扣 (%)", 0, 100, 0)
 tax = st.number_input("税率 (%)", min_value=0.0, step=0.1, value=2.7)
 
 # 显示订单
-st.write("## 🧾 当前订单")
 if st.button("🧹 清空订单"):
     st.session_state.order = []
     st.rerun()
