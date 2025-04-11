@@ -80,8 +80,8 @@ if not st.session_state.order:
     st.info("🕙 当前没有添加任何商品")
 else:
     # 表头：7列版本
-header_cols = st.columns([1.2, 2, 2, 2.2, 1.5, 1.5, 1])
-headers = ["颜色", "种类", "长度", "数量", "单价", "小计", "删除"]
+    header_cols = st.columns([1.2, 2, 2, 2.2, 1.5, 1.5, 1])
+    headers = ["颜色", "种类", "长度", "数量", "单价", "小计", "删除"]
 for col, h in zip(header_cols, headers):
     col.markdown(f"<span style='font-size:16px; font-weight:600'>{h}</span>", unsafe_allow_html=True)
 
