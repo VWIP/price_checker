@@ -105,7 +105,8 @@ else:
                 value=row["数量"],
                 step=1,
                 key=qty_key,
-                label_visibility="collapsed"
+                # 改为默认显示 label，可让按钮正常显示
+                label_visibility="visible"
             )
             st.session_state.order[i]["数量"] = updated_qty
             st.session_state.order[i]["小计 ($)"] = updated_qty * row["单价 ($)"]
