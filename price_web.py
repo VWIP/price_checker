@@ -97,7 +97,15 @@ else:
         with col3:
             st.markdown(f"{row['长度 (inch)']} inch")
         with col4:
-            qty = st.number_input("数量", min_value=1, step=1, value=row['数量'], key=qty_key, label_visibility="visible")
+            qty = st.number_input(
+                label=" ",             # ✅ 不显示 label 字
+                min_value=1,
+                step=1,
+                value=row['数量'],
+                key=qty_key,
+                label_visibility="collapsed"  # ✅ 彻底隐藏
+)
+
             row['数量'] = qty
             row['小计 ($)'] = qty * row['单价 ($)']
             st.session_state.order[i] = row
