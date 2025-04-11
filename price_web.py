@@ -47,7 +47,7 @@ for idx, kind in enumerate(all_kinds):
             available_colors = data[data['种类'] == kind]['颜色'].unique()
             color = st.selectbox(f"选择颜色（{kind}）", available_colors, key=f"color_{kind}")
 
-            available_lengths = data[(data['种类'] == kind) & (data['颜色'] == color)]['长度(cm)'].unique()
+            available_lengths = data[(data['种类'] == kind) & (data['颜色'] == color)]['长度(inch)'].unique()
             length = st.selectbox(f"选择长度（inch）（{kind}）", available_lengths, key=f"length_{kind}")
 
             quantity = st.number_input(f"数量（{kind}）", min_value=1, value=1, step=1, key=f"qty_{kind}")
