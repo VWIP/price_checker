@@ -82,26 +82,25 @@ else:
     for i, item in enumerate(st.session_state.order):
         row = item
         qty_key = f"qty_input_{i}"
-        updated_qty = st.number_input(
-            f"{row['颜色']} / {row['种类']} / {row['长度 (inch)']} inch 数量",
-            min_value=1,
-            value=row["数量"],
-            step=1,
-            key=qty_key
-        )
+        col1, col2, col3 = st.columns([3, 3, 4])
 
-        st.session_state.order[i]["数量"] = updated_qty
-        st.session_state.order[i]["小计 ($)"] = updated_qty * row["单价 ($)"]
-
-        col1, col2 = st.columns([5, 5])
         with col1:
             st.markdown(f"**{row['颜色']} / {row['种类']} / {row['长度 (inch)']} inch**")
         with col2:
-            st.markdown(f"**单价：${row['单价 ($)']:.2f} | 小计：${st.session_state.order[i]['小计 ($)']:.2f}**")
-
-        if st.button("🗑️", key=f"del_{i}"):
-            st.session_state.order.pop(i)
-            st.rerun()
+            updated_qty = st.number_input(
+                "数量",
+                min_value=1,
+                value=row["数量"],
+                step=1,
+                key=qty_key
+            )
+            st.session_state.order[i]["数量"] = updated_qty
+            st.session_state.order[i]["小计 ($)"] = updated_qty * row["单价 ($)"]
+        with col3:
+            st.markdown(f"单价：${row['单价 ($)']:.2f}  ｜  小计：${st.session_state.order[i]['小计 ($)']:.2f}")
+            if st.button("🗑️", key=f"del_{i}"):
+                st.session_state.order.pop(i)
+                st.rerun()
 
     df_order = pd.DataFrame(st.session_state.order)
     total = df_order["小计 ($)"].sum()
