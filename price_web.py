@@ -34,7 +34,8 @@ data = get_gsheet_data(SHEET_ID, SHEET_NAME)
 if "order" not in st.session_state:
     st.session_state.order = []
 if "selected_discount" not in st.session_state:
-    st.session_state.selected_discount = "$10"
+    st.session_state.selected_discount = None  # 初始化为空
+
 
 # === 页面标题 ===
 st.title("🧾 点单系统")
@@ -122,10 +123,17 @@ else:
     df_order = pd.DataFrame(st.session_state.order)
 
 subtotal = df_order["小计 ($)"].sum()
-discount_amt = float(st.session_state.selected_discount.strip("$"))
+
+# 设置默认折扣为 0（如果未选择）
+if st.session_state.selected_discount:
+    discount_amt = float(st.session_state.selected_discount.strip("$"))
+else:
+    discount_amt = 0.0
+
 after_discount = max(subtotal - discount_amt, 0)
 tax_amt = after_discount * (tax / 100)
 total = after_discount + tax_amt
+
 
 # === 汇总展示 ===
 st.markdown("---")
