@@ -111,9 +111,9 @@ with col1:
 with col2:
     st.markdown("<div style='padding-top:8px; font-weight:bold'>折扣金额</div>", unsafe_allow_html=True)
     st.markdown("""
-    <style>
+<style>
     .stButton button { height: 36px !important; line-height: 1 !important; font-size: 15px !important; }
-    </style>
+</style>
     """, unsafe_allow_html=True)
     bc1, bc2, bc3, bc4 = st.columns(4)
     with bc1:
