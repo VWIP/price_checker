@@ -79,10 +79,11 @@ if len(st.session_state.order) == 0:
     st.info("当前没有添加任何商品")
 else:
     total = 0
+    st.markdown("**颜色 | 种类 | 长度 | 数量 | 单价 + 小计 | 删除**")
     for i, item in enumerate(st.session_state.order):
         row = item
         qty_key = f"qty_input_{i}"
-        col1, col2, col3, col4 = st.columns([2, 3, 2, 3])
+        col1, col2, col3, col4, col5, col6 = st.columns([2, 2, 2, 2, 3, 1])
 
         with col1:
             st.markdown(f"{row['颜色']}")
@@ -92,18 +93,17 @@ else:
             st.markdown(f"{row['长度 (inch)']} inch")
         with col4:
             updated_qty = st.number_input(
-                "数量",
+                label="数量",
                 min_value=1,
                 value=row["数量"],
                 step=1,
-                key=qty_key
+                key=qty_key,
+                label_visibility="collapsed"
             )
             st.session_state.order[i]["数量"] = updated_qty
             st.session_state.order[i]["小计 ($)"] = updated_qty * row["单价 ($)"]
-
-        col5, col6 = st.columns([5, 5])
         with col5:
-            st.markdown(f"单价：${row['单价 ($)']:.2f}  ｜  小计：${st.session_state.order[i]['小计 ($)']:.2f}")
+            st.markdown(f"${row['单价 ($)']:.2f} ｜ ${st.session_state.order[i]['小计 ($)']:.2f}")
         with col6:
             if st.button("🗑️", key=f"del_{i}"):
                 st.session_state.order.pop(i)
