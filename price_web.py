@@ -82,11 +82,15 @@ else:
     for i, item in enumerate(st.session_state.order):
         row = item
         qty_key = f"qty_input_{i}"
-        col1, col2, col3 = st.columns([3, 3, 4])
+        col1, col2, col3, col4 = st.columns([2, 3, 2, 3])
 
         with col1:
-            st.markdown(f"**{row['颜色']} / {row['种类']} / {row['长度 (inch)']} inch**")
+            st.markdown(f"{row['颜色']}")
         with col2:
+            st.markdown(f"{row['种类']}")
+        with col3:
+            st.markdown(f"{row['长度 (inch)']} inch")
+        with col4:
             updated_qty = st.number_input(
                 "数量",
                 min_value=1,
@@ -96,8 +100,11 @@ else:
             )
             st.session_state.order[i]["数量"] = updated_qty
             st.session_state.order[i]["小计 ($)"] = updated_qty * row["单价 ($)"]
-        with col3:
+
+        col5, col6 = st.columns([5, 5])
+        with col5:
             st.markdown(f"单价：${row['单价 ($)']:.2f}  ｜  小计：${st.session_state.order[i]['小计 ($)']:.2f}")
+        with col6:
             if st.button("🗑️", key=f"del_{i}"):
                 st.session_state.order.pop(i)
                 st.rerun()
