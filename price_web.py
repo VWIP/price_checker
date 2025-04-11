@@ -32,6 +32,8 @@ data = get_gsheet_data(SHEET_ID, SHEET_NAME)
 # === 初始化 Session State ===
 if "order" not in st.session_state:
     st.session_state.order = []
+if "selected_discount" not in st.session_state:
+    st.session_state.selected_discount = "自定义"
 
 # === 页面标题 ===
 st.title("🧾 点单系统")
@@ -65,53 +67,6 @@ for idx, kind in enumerate(all_kinds):
                     })
                 else:
                     st.warning("⚠️ 表格中找不到该组合")
-
-# === 折扣与税率设置：一行显示 + 可选金额 + 自定义金额 ===
-st.markdown("## 💵 折扣与税率")
-col1, col2, col3, col4 = st.columns([1.5, 4.5, 2, 2])
-
-# 折扣方式选择（使用 padding 顶部对齐）
-with col1:
-    st.markdown("<div style='padding-top:15px'>折扣方式</div>", unsafe_allow_html=True)
-    discount_mode = st.selectbox(" ", ["固定金额 ($)", "百分比 (%)"], index=0, label_visibility="collapsed")
-
-# 折扣金额按钮
-with col2:
-    st.markdown("<div style='padding-top:15px'>折扣金额</div>", unsafe_allow_html=True)
-    if "selected_discount" not in st.session_state:
-        st.session_state.selected_discount = "自定义"
-
-    disc_cols = st.columns(4)
-    with disc_cols[0]:
-        if st.button("$10"):
-            st.session_state.selected_discount = "$10"
-    with disc_cols[1]:
-        if st.button("$15"):
-            st.session_state.selected_discount = "$15"
-    with disc_cols[2]:
-        if st.button("$20"):
-            st.session_state.selected_discount = "$20"
-    with disc_cols[3]:
-        if st.button("自定义"):
-            st.session_state.selected_discount = "自定义"
-
-# 自定义金额输入框
-with col3:
-    st.markdown("<div style='padding-top:15px'>输入金额</div>", unsafe_allow_html=True)
-    if discount_mode == "固定金额 ($)":
-        if st.session_state.selected_discount == "自定义":
-            discount_value = st.number_input(" ", min_value=0.0, value=0.0, step=1.0, label_visibility="collapsed")
-        else:
-            discount_value = float(st.session_state.selected_discount.strip("$"))
-    else:
-        discount_value = st.slider("折扣百分比 (%)", 0, 100, 0)
-
-# 税率设置
-with col4:
-    st.markdown("<div style='padding-top:15px'>税率 (%)</div>", unsafe_allow_html=True)
-    tax = st.number_input(" ", value=2.7, step=0.1, label_visibility="collapsed")
-
-
 
 # === 当前订单 ===
 st.write("## 🧾 当前订单明细")
@@ -159,25 +114,63 @@ else:
                 st.session_state.order.pop(i)
                 st.rerun()
 
-    # === 总价计算 ===
-    df_order = pd.DataFrame(st.session_state.order)
-    subtotal = df_order["小计 ($)"].sum()
+# === 折扣与税率（放在订单明细之后）===
+st.markdown("## 💵 折扣与税率")
+col1, col2, col3, col4 = st.columns([1.5, 4.5, 2, 2])
 
+with col1:
+    st.markdown("<div style='padding-top:8px'>折扣方式</div>", unsafe_allow_html=True)
+    discount_mode = st.selectbox(" ", ["固定金额 ($)", "百分比 (%)"], index=0, label_visibility="collapsed")
+
+with col2:
+    st.markdown("<div style='padding-top:8px; font-weight:bold'>折扣金额</div>", unsafe_allow_html=True)
+    button_cols = st.columns(4)
+    with button_cols[0]:
+        if st.button("$10"):
+            st.session_state.selected_discount = "$10"
+    with button_cols[1]:
+        if st.button("$15"):
+            st.session_state.selected_discount = "$15"
+    with button_cols[2]:
+        if st.button("$20"):
+            st.session_state.selected_discount = "$20"
+    with button_cols[3]:
+        if st.button("自定义"):
+            st.session_state.selected_discount = "自定义"
+
+with col3:
+    st.markdown("<div style='padding-top:8px'>输入金额</div>", unsafe_allow_html=True)
     if discount_mode == "固定金额 ($)":
-        discount_amt = discount_value
-        after_discount = max(subtotal - discount_amt, 0)
-        discount_display = f"**折扣：** -${discount_amt:.2f}"
+        if st.session_state.selected_discount == "自定义":
+            discount_value = st.number_input(" ", min_value=0.0, value=0.0, step=1.0, label_visibility="collapsed")
+        else:
+            discount_value = float(st.session_state.selected_discount.strip("$"))
     else:
-        discount_amt = subtotal * (discount_value / 100)
-        after_discount = subtotal - discount_amt
-        discount_display = f"**折扣：** {discount_value}% → -${discount_amt:.2f}"
+        discount_value = st.slider("折扣百分比 (%)", 0, 100, 0)
 
-    tax_amt = after_discount * (tax / 100)
-    total = after_discount + tax_amt
+with col4:
+    st.markdown("<div style='padding-top:8px'>税率 (%)</div>", unsafe_allow_html=True)
+    tax = st.number_input(" ", value=2.7, step=0.1, label_visibility="collapsed")
 
-    # === 显示金额汇总 ===
-    st.markdown("---")
-    st.markdown(f"**原始总价：** ${subtotal:.2f}")
-    st.markdown(discount_display)
-    st.markdown(f"**税率：** {tax:.1f}% → +${tax_amt:.2f}")
-    st.markdown(f"### 🧮 含税总计：🟩 **${total:.2f}**")
+# === 总价计算 ===
+df_order = pd.DataFrame(st.session_state.order)
+subtotal = df_order["小计 ($)"].sum()
+
+if discount_mode == "固定金额 ($)":
+    discount_amt = discount_value
+    after_discount = max(subtotal - discount_amt, 0)
+    discount_display = f"**折扣：** -${discount_amt:.2f}"
+else:
+    discount_amt = subtotal * (discount_value / 100)
+    after_discount = subtotal - discount_amt
+    discount_display = f"**折扣：** {discount_value}% → -${discount_amt:.2f}"
+
+tax_amt = after_discount * (tax / 100)
+total = after_discount + tax_amt
+
+# === 显示金额汇总 ===
+st.markdown("---")
+st.markdown(f"**原始总价：** ${subtotal:.2f}")
+st.markdown(discount_display)
+st.markdown(f"**税率：** {tax:.1f}% → +${tax_amt:.2f}")
+st.markdown(f"### 🧮 含税总计：🟩 **${total:.2f}**")
