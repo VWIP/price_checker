@@ -79,16 +79,18 @@ if len(st.session_state.order) == 0:
     st.info("当前没有添加任何商品")
 else:
     st.markdown("### 当前订单明细")
-    st.markdown("""
-    | 颜色 | 种类 | 长度 | 数量 | 单价 + 小计 | 删除 |
-    |------|------|------|--------|----------------|--------|
-    """)
-    total = 0
 
+    # 模拟表头
+    header_cols = st.columns([1, 2, 2, 2, 3, 1])
+    header_labels = ["颜色", "种类", "长度", "数量", "单价 + 小计", "删除"]
+    for col, label in zip(header_cols, header_labels):
+        col.markdown(f"**{label}**")
+
+    # 模拟每一行数据
     for i, item in enumerate(st.session_state.order):
         row = item
         qty_key = f"qty_input_{i}"
-        col1, col2, col3, col4, col5, col6 = st.columns([2, 2, 2, 2, 3, 1])
+        col1, col2, col3, col4, col5, col6 = st.columns([1, 2, 2, 2, 3, 1])
 
         with col1:
             st.markdown(f"{row['颜色']}")
@@ -112,3 +114,18 @@ else:
         with col6:
             if st.button("🗑️", key=f"del_{i}"):
                 st.session_state.order.pop(i)
+                st.rerun()
+
+    # 汇总统计
+    df_order = pd.DataFrame(st.session_state.order)
+    total = df_order["小计 ($)"].sum()
+    discount_amount = total * (discount / 100)
+    discounted = total - discount_amount
+    tax_amount = discounted * (tax / 100)
+    taxed = discounted + tax_amount
+
+    st.markdown("---")
+    st.markdown(f"**原始总价：** $ {total:.2f}")
+    st.markdown(f"**折扣：** {discount}% ➡️ 减少 $ {discount_amount:.2f}")
+    st.markdown(f"**税率：** {tax}% ➡️ 增加 $ {tax_amount:.2f}")
+    st.markdown(f"### 🧮 总计（含税）：🟩 **$ {taxed:.2f}**")
