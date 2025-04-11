@@ -78,8 +78,24 @@ if st.button("🧹 清空订单"):
 if len(st.session_state.order) == 0:
     st.info("当前没有添加任何商品")
 else:
+    df_order = pd.DataFrame(st.session_state.order)
+    edited_df = st.data_editor(
+        df_order,
+        column_config={
+            "单价 ($)": st.column_config.NumberColumn(disabled=True),
+            "小计 ($)": st.column_config.NumberColumn(disabled=True)
+        },
+        num_rows="dynamic",
+        use_container_width=True,
+        hide_index=True,
+        key="editable_order"
+    )
+
+    # 更新 session_state 中的数量与小计
+    st.session_state.order = edited_df.to_dict(orient="records")
     total = 0
-    st.markdown("**颜色 | 种类 | 长度 | 数量 | 单价 + 小计 | 删除**")
+    st.markdown("| 颜色 | 种类 | 长度 | 数量 | 单价 + 小计 | 删除 |")
+st.markdown("|------|------|------|--------|----------------|--------|")
     for i, item in enumerate(st.session_state.order):
         row = item
         qty_key = f"qty_input_{i}"
