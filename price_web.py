@@ -3,6 +3,7 @@ import pandas as pd
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
+from streamlit_javascript import st_javascript
 
 # ===== 自定义按钮样式（修复按钮间距 & 税率贴近问题） =====
 st.markdown("""
@@ -77,32 +78,12 @@ for idx, kind in enumerate(all_kinds):
                 else:
                     st.warning("⚠️ 没有找到匹配项目")
 
+# 获取屏幕宽度
+width = st_javascript("window.innerWidth")
+is_mobile = width is not None and width < 768
+
 # ===== 当前订单 =====
 st.write("## 🧾 当前订单明细")
-
-# 注入 JS，记录宽度到 session_state
-st.markdown("""
-<script>
-    const width = window.innerWidth;
-    const doc = document;
-    if (width <= 768) {
-        doc.cookie = "is_mobile=true";
-    } else {
-        doc.cookie = "is_mobile=false";
-    }
-</script>
-""", unsafe_allow_html=True)
-
-# 读取 cookie 中 is_mobile 状态（需要 page reload 一次才准确）
-import streamlit.components.v1 as components
-import http.cookies
-cookies = http.cookies.SimpleCookie()
-if "HTTP_COOKIE" in st.request.headers:
-    cookies.load(st.request.headers["HTTP_COOKIE"])
-is_mobile = cookies.get("is_mobile")
-is_mobile = is_mobile.value == "true" if is_mobile else False
-
-# 清空订单按钮
 if st.button("🧹 清空订单"):
     st.session_state.order = []
     st.rerun()
