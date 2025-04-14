@@ -4,39 +4,43 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
 
-# 💡 强制 columns 横向排列（适配手机）
+# ========== 💡 自定义样式：防止手机端竖排 ==========
 st.markdown("""
 <style>
-/* 取消 columns 在手机上的垂直堆叠行为 */
-@media (max-width: 768px) {
-    [data-testid="stHorizontalBlock"] > div {
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-    }
-    [data-testid="stHorizontalBlock"] > div > div {
-        min-width: 120px !important;
-        margin-right: 8px !important;
-    }
-}
-</style>
-""", unsafe_allow_html=True)
+/* 强制横向布局（订单表格） */
+@media screen and (max-width: 768px) {
+  section.main > div { max-width: 100% !important; }
 
-# ===== 自定义按钮样式（修复按钮间距 & 税率贴近问题） =====
-st.markdown("""
-<style>
-button[kind="secondary"] {
-    padding: 0.25rem 0.75rem !important;
-    font-size: 15px !important;
-    margin-right: 8px !important;
+  [data-testid="stHorizontalBlock"] {
+    overflow-x: auto;
     white-space: nowrap;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+  }
+  [data-testid="stHorizontalBlock"] > div {
+    min-width: 120px !important;
+    margin-right: 6px;
+  }
+
+  .stMarkdown, .stNumberInput {
+    white-space: nowrap !important;
+  }
+}
+/* 折扣按钮间距修复 */
+button[kind="secondary"] {
+  padding: 0.25rem 0.75rem !important;
+  font-size: 15px !important;
+  margin-right: 8px !important;
+  white-space: nowrap;
 }
 button[kind="secondary"]:last-of-type {
-    margin-right: 20px !important;
+  margin-right: 20px !important;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ===== Google Sheets 数据连接 =====
+# ========== 获取 Google Sheet 数据 ==========
 def get_gsheet_data(sheet_id, sheet_name):
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
     try:
@@ -46,16 +50,11 @@ def get_gsheet_data(sheet_id, sheet_name):
         sheet = client.open_by_key(sheet_id).worksheet(sheet_name)
         return pd.DataFrame(sheet.get_all_records())
     except Exception as e:
-        st.error("❌ 无法连接 Google Sheets，请检查以下内容：")
-        st.markdown("""
-        - 📌 表格是否分享给服务账号
-        - 📌 SHEET_ID 是否正确
-        - 📌 Sheet 名称是否一致
-        """)
+        st.error("❌ 无法连接 Google Sheets")
         st.exception(e)
         st.stop()
 
-# ===== 基本设置 =====
+# ========== 配置 ==========
 SHEET_ID = "1ikOLabQ1f4OlxLDnm-jIgL4Nckkxfdf71jwmmWu5E5M"
 SHEET_NAME = "Sheet1"
 data = get_gsheet_data(SHEET_ID, SHEET_NAME)
@@ -65,11 +64,11 @@ if "order" not in st.session_state:
 if "selected_discount" not in st.session_state:
     st.session_state.selected_discount = None
 
-# ===== 页面开始 =====
+# ========== 页面标题 ==========
 st.title("🧾 点单系统")
 st.write("点击种类 → 选择颜色 + 长度 → 添加至订单")
 
-# ===== 菜单选择 =====
+# ========== 菜单选择 ==========
 st.write("## 📋 菜单")
 all_kinds = data['种类'].unique()
 cols = st.columns(3)
@@ -92,9 +91,9 @@ for idx, kind in enumerate(all_kinds):
                         "小计 ($)": price
                     })
                 else:
-                    st.warning("⚠️ 没有找到匹配项目")
+                    st.warning("⚠️ 表格中未找到该组合")
 
-# ===== 当前订单 =====
+# ========== 当前订单 ==========
 st.write("## 🧾 当前订单明细")
 if st.button("🧹 清空订单"):
     st.session_state.order = []
@@ -122,7 +121,7 @@ else:
                 st.session_state.order.pop(i)
                 st.rerun()
 
-# ===== 折扣与税率设置 =====
+# ========== 折扣与税率 ==========
 st.markdown("## 💵 折扣与税率")
 col1, col2, col3 = st.columns([2, 6, 2.5])
 
@@ -146,19 +145,26 @@ with col3:
     st.markdown("**税率 (%)**")
     tax = st.number_input(" ", value=2.7, step=0.1, label_visibility="collapsed")
 
-# ===== 总价计算与显示 =====
+# ========== 总价计算 ==========
 df_order = pd.DataFrame(st.session_state.order) if st.session_state.order else pd.DataFrame(columns=["小计 ($)"])
 subtotal = df_order["小计 ($)"].sum()
 
-# 折扣计算
-discount_amt = float(st.session_state.selected_discount.strip("$")) if st.session_state.selected_discount else 0.0
-after_discount = max(subtotal - discount_amt, 0)
+if discount_mode == "固定金额 ($)":
+    discount_amt = float(st.session_state.selected_discount.strip("$")) if st.session_state.selected_discount else 0.0
+    after_discount = max(subtotal - discount_amt, 0)
+    discount_display = f"**折扣：** -$ {discount_amt:.2f}"
+else:
+    discount_value = float(st.session_state.selected_discount.strip("$")) if st.session_state.selected_discount else 0.0
+    discount_amt = subtotal * (discount_value / 100)
+    after_discount = subtotal - discount_amt
+    discount_display = f"**折扣：** {discount_value}% → -$ {discount_amt:.2f}"
+
 tax_amt = after_discount * (tax / 100)
 total = after_discount + tax_amt
 
-# 汇总显示
+# ========== 显示金额汇总 ==========
 st.markdown("---")
 st.markdown(f"**原始总价：** $ {subtotal:.2f}")
-st.markdown(f"**折扣：** -$ {discount_amt:.2f}")
+st.markdown(discount_display)
 st.markdown(f"**税率：** {tax:.1f}% → +$ {tax_amt:.2f}")
 st.markdown(f"### 🧮 含税总计：🟩 **$ {total:.2f}**")
