@@ -4,6 +4,23 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
 
+# 💡 强制 columns 横向排列（适配手机）
+st.markdown("""
+<style>
+/* 取消 columns 在手机上的垂直堆叠行为 */
+@media (max-width: 768px) {
+    [data-testid="stHorizontalBlock"] > div {
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+    }
+    [data-testid="stHorizontalBlock"] > div > div {
+        min-width: 120px !important;
+        margin-right: 8px !important;
+    }
+}
+</style>
+""", unsafe_allow_html=True)
+
 # ===== 自定义按钮样式（修复按钮间距 & 税率贴近问题） =====
 st.markdown("""
 <style>
