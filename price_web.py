@@ -86,38 +86,32 @@ if st.button("🧹 清空订单"):
 if not st.session_state.order:
     st.info("🕙 当前没有添加任何商品")
 else:
-    # 自动判断设备宽度（可用于手机判断）
-    is_mobile = st.get_option("browser.user_agent") and "Mobile" in st.get_option("browser.user_agent")
-
     df_order = pd.DataFrame(st.session_state.order)
+    
+    # 可调数量、带删除按钮（按钮位置在外）
+    for i, row in enumerate(df_order.itertuples()):
+        col1, col2 = st.columns([7, 1])
+        with col1:
+            qty = st.number_input(
+                f"数量 - {row.颜色} {row.种类} {row._3}inch",  # row._3 是长度
+                value=row.数量,
+                min_value=1,
+                step=1,
+                key=f"qty_{i}"
+            )
+            st.session_state.order[i]["数量"] = qty
+            st.session_state.order[i]["小计 ($)"] = qty * row._5  # row._5 是单价
+        with col2:
+            if st.button("🗑️ 删除", key=f"del_{i}"):
+                st.session_state.order.pop(i)
+                st.rerun()
 
-    if is_mobile:
-        # 手机模式：显示为简洁表格
-        df_display = df_order.copy()
-        df_display["数量"] = df_display["数量"].astype(int)
-        df_display["单价 ($)"] = df_display["单价 ($)"].map(lambda x: f"${x:.2f}")
-        df_display["小计 ($)"] = df_display["小计 ($)"].map(lambda x: f"${x:.2f}")
-        st.dataframe(df_display, use_container_width=True)
-    else:
-        # 桌面模式：分列布局 + 数量可调 + 删除按钮
-        header_cols = st.columns([1.2, 2, 2, 2.2, 1.5, 1.5, 1])
-        for col, h in zip(header_cols, ["颜色", "种类", "长度", "数量", "单价", "小计", "删除"]):
-            col.markdown(f"<span style='font-size:16px; font-weight:600'>{h}</span>", unsafe_allow_html=True)
-        for i, row in enumerate(st.session_state.order):
-            col1, col2, col3, col4, col5, col6, col7 = st.columns([1.2, 2, 2, 2.2, 1.5, 1.5, 1])
-            with col1: st.markdown(f"<div style='line-height:2.6'>{row['颜色']}</div>", unsafe_allow_html=True)
-            with col2: st.markdown(f"<div style='line-height:2.6'>{row['种类']}</div>", unsafe_allow_html=True)
-            with col3: st.markdown(f"<div style='line-height:2.6'>{row['长度 (inch)']} inch</div>", unsafe_allow_html=True)
-            with col4:
-                qty = st.number_input(" ", value=row["数量"], min_value=1, step=1, key=f"qty_{i}", label_visibility="collapsed")
-                st.session_state.order[i]["数量"] = qty
-                st.session_state.order[i]["小计 ($)"] = qty * row["单价 ($)"]
-            with col5: st.markdown(f"<div style='line-height:2.6'>$ {row['单价 ($)']:.2f}</div>", unsafe_allow_html=True)
-            with col6: st.markdown(f"<div style='line-height:2.6'>$ {row['小计 ($)']:.2f}</div>", unsafe_allow_html=True)
-            with col7:
-                if st.button("🗑️", key=f"del_{i}"):
-                    st.session_state.order.pop(i)
-                    st.rerun()
+    # 显示为整表
+    display_df = pd.DataFrame(st.session_state.order)
+    display_df["单价 ($)"] = display_df["单价 ($)"].map(lambda x: f"${x:.2f}")
+    display_df["小计 ($)"] = display_df["小计 ($)"].map(lambda x: f"${x:.2f}")
+    st.dataframe(display_df, use_container_width=True, height=300)
+
 
 
 # ===== 折扣与税率设置 =====
