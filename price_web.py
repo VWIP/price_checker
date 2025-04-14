@@ -1,11 +1,11 @@
-import streamlit as st
+import streamlit as st 
 import pandas as pd
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
-from streamlit_javascript import st_javascript
+import streamlit.components.v1 as components
 
-# ===== 自定义按钮样式（修复按钮间距 & 税率贴近问题） =====
+# ===== 自定义按钮样式 =====
 st.markdown("""
 <style>
 button[kind="secondary"] {
@@ -78,9 +78,10 @@ for idx, kind in enumerate(all_kinds):
                 else:
                     st.warning("⚠️ 没有找到匹配项目")
 
-# 获取屏幕宽度
-width = st_javascript("window.innerWidth")
-is_mobile = width is not None and width < 768
+# ===== 手机判断 =====
+components.html("<script>window.parent.postMessage({type: 'streamlit:setComponentValue', value: window.innerWidth < 768}, '*');</script>", height=0)
+is_mobile = st.experimental_get_query_params().get("is_mobile", [None])[0]
+is_mobile = is_mobile == "true" if is_mobile else False
 
 # ===== 当前订单 =====
 st.write("## 🧾 当前订单明细")
@@ -92,64 +93,57 @@ if not st.session_state.order:
     st.info("🕙 当前没有添加任何商品")
 else:
     if is_mobile:
-    # ======= 移动设备：卡片风格压缩排版 =======
         df_mobile = pd.DataFrame(st.session_state.order)
-
-    for i, row in enumerate(df_mobile.itertuples()):
-        with st.container():
-            st.markdown(
-                """
-                <style>
-                .order-card {
-                    border: 1px solid #444;
-                    border-radius: 12px;
-                    padding: 12px 12px;
-                    margin-bottom: 10px;
-                    background-color: #1e1e1e;
-                }
-                .order-row {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    flex-wrap: wrap;
-                    font-size: 14px;
-                    gap: 8px;
-                }
-                .order-label {
-                    min-width: 60px;
-                    font-weight: 600;
-                }
-                </style>
-                """, unsafe_allow_html=True
-            )
-
+        st.markdown("""
+        <style>
+        .card {
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+        }
+        .row {
+            display: flex;
+            flex-wrap: nowrap;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            gap: 4px;
+        }
+        .item {
+            flex: 1;
+            text-align: center;
+        }
+        .item-name {
+            flex: 2;
+            font-weight: bold;
+        }
+        .delete-btn button {
+            background-color: transparent;
+            border: none;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        for i, row in enumerate(df_mobile.itertuples()):
+            qty_key = f"qty_m_{i}"
+            del_key = f"del_m_{i}"
             with st.container():
-                st.markdown('<div class="order-card">', unsafe_allow_html=True)
-                st.markdown(
-                    f"""<div class="order-row"><span class="order-label">{row.颜色} | {row.种类} | {row._3}inch</span>""",
-                    unsafe_allow_html=True
-                )
-
-                c1, c2, c3, c4 = st.columns([2.5, 1.3, 1.3, 1])
-                with c1:
-                    qty = st.number_input(
-                        "数量", value=row.数量, min_value=1, step=1,
-                        key=f"qty_m_{i}", label_visibility="collapsed"
-                    )
-                    st.session_state.order[i]["数量"] = qty
-                    st.session_state.order[i]["小计 ($)"] = qty * row._5
-                with c2:
-                    st.markdown(f"单价<br><b>${row._5:.2f}</b>", unsafe_allow_html=True)
-                with c3:
-                    st.markdown(f"小计<br><b>${row._6:.2f}</b>", unsafe_allow_html=True)
-                with c4:
-                    if st.button("🗑️", key=f"del_m_{i}"):
-                        st.session_state.order.pop(i)
-                        st.rerun()
-                st.markdown("</div>", unsafe_allow_html=True)
-
+                st.markdown('<div class="card"><div class="row">', unsafe_allow_html=True)
+                st.markdown(f'<div class="item item-name">{row.颜色} | {row.种类} | {row._3}inch</div>', unsafe_allow_html=True)
+                st.markdown('<div class="item">', unsafe_allow_html=True)
+                qty = st.number_input(" ", value=row.数量, min_value=1, step=1, key=qty_key, label_visibility="collapsed")
+                st.session_state.order[i]["数量"] = qty
+                st.session_state.order[i]["小计 ($)"] = qty * row._5
+                st.markdown('</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="item">${row._5:.2f}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="item">${row._6:.2f}</div>', unsafe_allow_html=True)
+                st.markdown('<div class="item delete-btn">', unsafe_allow_html=True)
+                if st.button("🗑️", key=del_key):
+                    st.session_state.order.pop(i)
+                    st.rerun()
+                st.markdown('</div></div>', unsafe_allow_html=True)
     else:
-        # ======= 桌面 / 平板：原始列布局版本 =======
         header_cols = st.columns([1.2, 2, 2, 2.2, 1.5, 1.5, 1])
         for col, h in zip(header_cols, ["颜色", "种类", "长度", "数量", "单价", "小计", "删除"]):
             col.markdown(f"<span style='font-size:16px; font-weight:600'>{h}</span>", unsafe_allow_html=True)
@@ -169,15 +163,12 @@ else:
                     st.session_state.order.pop(i)
                     st.rerun()
 
-
 # ===== 折扣与税率设置 =====
 st.markdown("## 💵 折扣与税率")
 col1, col2, col3 = st.columns([2, 6, 2.5])
-
 with col1:
     st.markdown("**折扣方式**")
     discount_mode = st.selectbox(" ", ["固定金额 ($)", "百分比 (%)"], index=0, label_visibility="collapsed")
-
 with col2:
     st.markdown("**折扣金额**")
     b1, b2, b3, b4 = st.columns(4)
@@ -189,22 +180,18 @@ with col2:
         if st.button("$20"): st.session_state.selected_discount = "$20"
     with b4:
         if st.button("❌ 无折扣"): st.session_state.selected_discount = None
-
 with col3:
     st.markdown("**税率 (%)**")
     tax = st.number_input(" ", value=2.7, step=0.1, label_visibility="collapsed")
 
-# ===== 总价计算与显示 =====
+# ===== 总价计算 =====
 df_order = pd.DataFrame(st.session_state.order) if st.session_state.order else pd.DataFrame(columns=["小计 ($)"])
 subtotal = df_order["小计 ($)"].sum()
-
-# 折扣计算
 discount_amt = float(st.session_state.selected_discount.strip("$")) if st.session_state.selected_discount else 0.0
 after_discount = max(subtotal - discount_amt, 0)
 tax_amt = after_discount * (tax / 100)
 total = after_discount + tax_amt
 
-# 汇总显示
 st.markdown("---")
 st.markdown(f"**原始总价：** $ {subtotal:.2f}")
 st.markdown(f"**折扣：** -$ {discount_amt:.2f}")
