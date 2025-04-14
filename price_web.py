@@ -1,3 +1,4 @@
+
 import streamlit as st 
 import pandas as pd
 import gspread
@@ -78,9 +79,9 @@ for idx, kind in enumerate(all_kinds):
                 else:
                     st.warning("⚠️ 没有找到匹配项目")
 
-# ===== 手机判断 =====
+# ===== 手机判断（宽度判断） =====
 components.html("<script>window.parent.postMessage({type: 'streamlit:setComponentValue', value: window.innerWidth < 768}, '*');</script>", height=0)
-is_mobile = st.experimental_get_query_params().get("is_mobile", [None])[0]
+is_mobile = st.query_params.get("is_mobile", [None])[0]
 is_mobile = is_mobile == "true" if is_mobile else False
 
 # ===== 当前订单 =====
@@ -94,55 +95,40 @@ if not st.session_state.order:
 else:
     if is_mobile:
         df_mobile = pd.DataFrame(st.session_state.order)
+
         st.markdown("""
-        <style>
-        .card {
-            border: 1px solid #ccc;
-            border-radius: 10px;
-            padding: 10px;
-            margin-bottom: 10px;
-            background-color: #f9f9f9;
-        }
-        .row {
-            display: flex;
-            flex-wrap: nowrap;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 14px;
-            gap: 4px;
-        }
-        .item {
-            flex: 1;
-            text-align: center;
-        }
-        .item-name {
-            flex: 2;
-            font-weight: bold;
-        }
-        .delete-btn button {
-            background-color: transparent;
-            border: none;
-        }
-        </style>
+            <style>
+            .mobile-card {
+                border: 1px solid #ccc;
+                border-radius: 10px;
+                padding: 10px;
+                margin-bottom: 10px;
+                background-color: #f8f8f8;
+            }
+            .mobile-name {
+                font-weight: bold;
+                margin-bottom: 8px;
+            }
+            </style>
         """, unsafe_allow_html=True)
+
         for i, row in enumerate(df_mobile.itertuples()):
-            qty_key = f"qty_m_{i}"
-            del_key = f"del_m_{i}"
-            with st.container():
-                st.markdown('<div class="card"><div class="row">', unsafe_allow_html=True)
-                st.markdown(f'<div class="item item-name">{row.颜色} | {row.种类} | {row._3}inch</div>', unsafe_allow_html=True)
-                st.markdown('<div class="item">', unsafe_allow_html=True)
-                qty = st.number_input(" ", value=row.数量, min_value=1, step=1, key=qty_key, label_visibility="collapsed")
+            st.markdown('<div class="mobile-card">', unsafe_allow_html=True)
+            st.markdown(f"<div class='mobile-name'>{row.颜色} | {row.种类} | {row._3}inch</div>", unsafe_allow_html=True)
+            c1, c2, c3, c4 = st.columns([2, 1.3, 1.3, 1])
+            with c1:
+                qty = st.number_input("数量", value=row.数量, min_value=1, step=1, key=f"qty_m_{i}")
                 st.session_state.order[i]["数量"] = qty
                 st.session_state.order[i]["小计 ($)"] = qty * row._5
-                st.markdown('</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="item">${row._5:.2f}</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="item">${row._6:.2f}</div>', unsafe_allow_html=True)
-                st.markdown('<div class="item delete-btn">', unsafe_allow_html=True)
-                if st.button("🗑️", key=del_key):
+            with c2:
+                st.markdown(f"单价<br><b>${row._5:.2f}</b>", unsafe_allow_html=True)
+            with c3:
+                st.markdown(f"小计<br><b>${row._6:.2f}</b>", unsafe_allow_html=True)
+            with c4:
+                if st.button("🗑️", key=f"del_m_{i}"):
                     st.session_state.order.pop(i)
                     st.rerun()
-                st.markdown('</div></div>', unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
     else:
         header_cols = st.columns([1.2, 2, 2, 2.2, 1.5, 1.5, 1])
         for col, h in zip(header_cols, ["颜色", "种类", "长度", "数量", "单价", "小计", "删除"]):
