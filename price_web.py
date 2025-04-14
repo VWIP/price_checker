@@ -92,21 +92,62 @@ if not st.session_state.order:
     st.info("🕙 当前没有添加任何商品")
 else:
     if is_mobile:
-        # ======= 移动设备：简洁紧凑表格版本 =======
+    # ======= 移动设备：卡片风格压缩排版 =======
         df_mobile = pd.DataFrame(st.session_state.order)
 
-        for i, row in enumerate(df_mobile.itertuples()):
-            col1, col2 = st.columns([4, 1])
-            with col1:
-                st.markdown(f"**{row.颜色} | {row.种类} | {row._3}inch**", unsafe_allow_html=True)
-                qty = st.number_input("数量", value=row.数量, min_value=1, step=1, key=f"qty_m_{i}")
-                st.session_state.order[i]["数量"] = qty
-                st.session_state.order[i]["小计 ($)"] = qty * row._5
-                st.markdown(f"单价：${row._5:.2f}  |  小计：${row._6:.2f}", unsafe_allow_html=True)
-            with col2:
-                if st.button("🗑️", key=f"del_m_{i}"):
-                    st.session_state.order.pop(i)
-                    st.rerun()
+    for i, row in enumerate(df_mobile.itertuples()):
+        with st.container():
+            st.markdown(
+                """
+                <style>
+                .order-card {
+                    border: 1px solid #444;
+                    border-radius: 12px;
+                    padding: 12px 12px;
+                    margin-bottom: 10px;
+                    background-color: #1e1e1e;
+                }
+                .order-row {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    flex-wrap: wrap;
+                    font-size: 14px;
+                    gap: 8px;
+                }
+                .order-label {
+                    min-width: 60px;
+                    font-weight: 600;
+                }
+                </style>
+                """, unsafe_allow_html=True
+            )
+
+            with st.container():
+                st.markdown('<div class="order-card">', unsafe_allow_html=True)
+                st.markdown(
+                    f"""<div class="order-row"><span class="order-label">{row.颜色} | {row.种类} | {row._3}inch</span>""",
+                    unsafe_allow_html=True
+                )
+
+                c1, c2, c3, c4 = st.columns([2.5, 1.3, 1.3, 1])
+                with c1:
+                    qty = st.number_input(
+                        "数量", value=row.数量, min_value=1, step=1,
+                        key=f"qty_m_{i}", label_visibility="collapsed"
+                    )
+                    st.session_state.order[i]["数量"] = qty
+                    st.session_state.order[i]["小计 ($)"] = qty * row._5
+                with c2:
+                    st.markdown(f"单价<br><b>${row._5:.2f}</b>", unsafe_allow_html=True)
+                with c3:
+                    st.markdown(f"小计<br><b>${row._6:.2f}</b>", unsafe_allow_html=True)
+                with c4:
+                    if st.button("🗑️", key=f"del_m_{i}"):
+                        st.session_state.order.pop(i)
+                        st.rerun()
+                st.markdown("</div>", unsafe_allow_html=True)
+
     else:
         # ======= 桌面 / 平板：原始列布局版本 =======
         header_cols = st.columns([1.2, 2, 2, 2.2, 1.5, 1.5, 1])
