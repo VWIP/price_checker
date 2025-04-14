@@ -79,12 +79,12 @@ for idx, kind in enumerate(all_kinds):
                 else:
                     st.warning("⚠️ 没有找到匹配项目")
 
-# ===== 手机判断（宽度判断） =====
+# ===== 手机判断 =====
 components.html("<script>window.parent.postMessage({type: 'streamlit:setComponentValue', value: window.innerWidth < 768}, '*');</script>", height=0)
 is_mobile = st.query_params.get("is_mobile", [None])[0]
 is_mobile = is_mobile == "true" if is_mobile else False
 
-# ===== 当前订单 =====
+# ===== 当前订单明细 =====
 st.write("## 🧾 当前订单明细")
 if st.button("🧹 清空订单"):
     st.session_state.order = []
@@ -94,41 +94,24 @@ if not st.session_state.order:
     st.info("🕙 当前没有添加任何商品")
 else:
     if is_mobile:
-        df_mobile = pd.DataFrame(st.session_state.order)
+        df = pd.DataFrame(st.session_state.order)
+        df_display = df.copy()
+        df_display["单价 ($)"] = df_display["单价 ($)"].map(lambda x: f"${x:.2f}")
+        df_display["小计 ($)"] = df_display["小计 ($)"].map(lambda x: f"${x:.2f}")
+        st.dataframe(df_display, use_container_width=True)
 
-        st.markdown("""
-            <style>
-            .mobile-card {
-                border: 1px solid #ccc;
-                border-radius: 10px;
-                padding: 10px;
-                margin-bottom: 10px;
-                background-color: #f8f8f8;
-            }
-            .mobile-name {
-                font-weight: bold;
-                margin-bottom: 8px;
-            }
-            </style>
-        """, unsafe_allow_html=True)
-
-        for i, row in enumerate(df_mobile.itertuples()):
-            st.markdown('<div class="mobile-card">', unsafe_allow_html=True)
-            st.markdown(f"<div class='mobile-name'>{row.颜色} | {row.种类} | {row._3}inch</div>", unsafe_allow_html=True)
-            c1, c2, c3, c4 = st.columns([2, 1.3, 1.3, 1])
-            with c1:
-                qty = st.number_input("数量", value=row.数量, min_value=1, step=1, key=f"qty_m_{i}")
-                st.session_state.order[i]["数量"] = qty
-                st.session_state.order[i]["小计 ($)"] = qty * row._5
-            with c2:
-                st.markdown(f"单价<br><b>${row._5:.2f}</b>", unsafe_allow_html=True)
-            with c3:
-                st.markdown(f"小计<br><b>${row._6:.2f}</b>", unsafe_allow_html=True)
-            with c4:
-                if st.button("🗑️", key=f"del_m_{i}"):
-                    st.session_state.order.pop(i)
-                    st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
+        for i, row in enumerate(st.session_state.order):
+            with st.expander(f"{row['颜色']} | {row['种类']} | {row['长度 (inch)']}inch"):
+                col1, col2 = st.columns([4, 1])
+                with col1:
+                    qty = st.number_input("数量", value=row["数量"], min_value=1, step=1, key=f"qty_m_{i}")
+                    st.session_state.order[i]["数量"] = qty
+                    st.session_state.order[i]["小计 ($)"] = qty * row["单价 ($)"]
+                    st.markdown(f"单价：${row['单价 ($)']:.2f} | 小计：${st.session_state.order[i]['小计 ($)']:.2f}")
+                with col2:
+                    if st.button("🗑️ 删除", key=f"del_m_{i}"):
+                        st.session_state.order.pop(i)
+                        st.rerun()
     else:
         header_cols = st.columns([1.2, 2, 2, 2.2, 1.5, 1.5, 1])
         for col, h in zip(header_cols, ["颜色", "种类", "长度", "数量", "单价", "小计", "删除"]):
