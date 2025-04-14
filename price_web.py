@@ -79,6 +79,30 @@ for idx, kind in enumerate(all_kinds):
 
 # ===== 当前订单 =====
 st.write("## 🧾 当前订单明细")
+
+# 注入 JS，记录宽度到 session_state
+st.markdown("""
+<script>
+    const width = window.innerWidth;
+    const doc = document;
+    if (width <= 768) {
+        doc.cookie = "is_mobile=true";
+    } else {
+        doc.cookie = "is_mobile=false";
+    }
+</script>
+""", unsafe_allow_html=True)
+
+# 读取 cookie 中 is_mobile 状态（需要 page reload 一次才准确）
+import streamlit.components.v1 as components
+import http.cookies
+cookies = http.cookies.SimpleCookie()
+if "HTTP_COOKIE" in st.request.headers:
+    cookies.load(st.request.headers["HTTP_COOKIE"])
+is_mobile = cookies.get("is_mobile")
+is_mobile = is_mobile.value == "true" if is_mobile else False
+
+# 清空订单按钮
 if st.button("🧹 清空订单"):
     st.session_state.order = []
     st.rerun()
@@ -86,32 +110,42 @@ if st.button("🧹 清空订单"):
 if not st.session_state.order:
     st.info("🕙 当前没有添加任何商品")
 else:
-    df_order = pd.DataFrame(st.session_state.order)
-    
-    # 可调数量、带删除按钮（按钮位置在外）
-    for i, row in enumerate(df_order.itertuples()):
-        col1, col2 = st.columns([7, 1])
-        with col1:
-            qty = st.number_input(
-                f"数量 - {row.颜色} {row.种类} {row._3}inch",  # row._3 是长度
-                value=row.数量,
-                min_value=1,
-                step=1,
-                key=f"qty_{i}"
-            )
-            st.session_state.order[i]["数量"] = qty
-            st.session_state.order[i]["小计 ($)"] = qty * row._5  # row._5 是单价
-        with col2:
-            if st.button("🗑️ 删除", key=f"del_{i}"):
-                st.session_state.order.pop(i)
-                st.rerun()
+    if is_mobile:
+        # ======= 移动设备：简洁紧凑表格版本 =======
+        df_mobile = pd.DataFrame(st.session_state.order)
 
-    # 显示为整表
-    display_df = pd.DataFrame(st.session_state.order)
-    display_df["单价 ($)"] = display_df["单价 ($)"].map(lambda x: f"${x:.2f}")
-    display_df["小计 ($)"] = display_df["小计 ($)"].map(lambda x: f"${x:.2f}")
-    st.dataframe(display_df, use_container_width=True, height=300)
-
+        for i, row in enumerate(df_mobile.itertuples()):
+            col1, col2 = st.columns([4, 1])
+            with col1:
+                st.markdown(f"**{row.颜色} | {row.种类} | {row._3}inch**", unsafe_allow_html=True)
+                qty = st.number_input("数量", value=row.数量, min_value=1, step=1, key=f"qty_m_{i}")
+                st.session_state.order[i]["数量"] = qty
+                st.session_state.order[i]["小计 ($)"] = qty * row._5
+                st.markdown(f"单价：${row._5:.2f}  |  小计：${row._6:.2f}", unsafe_allow_html=True)
+            with col2:
+                if st.button("🗑️", key=f"del_m_{i}"):
+                    st.session_state.order.pop(i)
+                    st.rerun()
+    else:
+        # ======= 桌面 / 平板：原始列布局版本 =======
+        header_cols = st.columns([1.2, 2, 2, 2.2, 1.5, 1.5, 1])
+        for col, h in zip(header_cols, ["颜色", "种类", "长度", "数量", "单价", "小计", "删除"]):
+            col.markdown(f"<span style='font-size:16px; font-weight:600'>{h}</span>", unsafe_allow_html=True)
+        for i, row in enumerate(st.session_state.order):
+            col1, col2, col3, col4, col5, col6, col7 = st.columns([1.2, 2, 2, 2.2, 1.5, 1.5, 1])
+            with col1: st.markdown(f"<div style='line-height:2.6'>{row['颜色']}</div>", unsafe_allow_html=True)
+            with col2: st.markdown(f"<div style='line-height:2.6'>{row['种类']}</div>", unsafe_allow_html=True)
+            with col3: st.markdown(f"<div style='line-height:2.6'>{row['长度 (inch)']} inch</div>", unsafe_allow_html=True)
+            with col4:
+                qty = st.number_input(" ", value=row["数量"], min_value=1, step=1, key=f"qty_{i}", label_visibility="collapsed")
+                st.session_state.order[i]["数量"] = qty
+                st.session_state.order[i]["小计 ($)"] = qty * row["单价 ($)"]
+            with col5: st.markdown(f"<div style='line-height:2.6'>$ {row['单价 ($)']:.2f}</div>", unsafe_allow_html=True)
+            with col6: st.markdown(f"<div style='line-height:2.6'>$ {row['小计 ($)']:.2f}</div>", unsafe_allow_html=True)
+            with col7:
+                if st.button("🗑️", key=f"del_{i}"):
+                    st.session_state.order.pop(i)
+                    st.rerun()
 
 
 # ===== 折扣与税率设置 =====
